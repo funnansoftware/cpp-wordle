@@ -74,13 +74,6 @@ if(NOT EMSCRIPTEN AND NOT ANDROID)
     )
 endif()
 
-if(WIN32)
-    target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-            winmm
-    )
-endif()
-
 if(NOT EMSCRIPTEN)
     install(TARGETS ${PROJECT_NAME}
         BUNDLE DESTINATION .

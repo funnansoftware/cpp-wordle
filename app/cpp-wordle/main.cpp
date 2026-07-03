@@ -65,6 +65,11 @@ try
         }
 
         EndDrawing();
+        // vcpkg raylib 6 doesn't configure correctly.
+        // This means we need to control when to invoke
+        // buffer swaps and event polling.
+        SwapScreenBuffer();
+        PollInputEvents();
     }
 
     CloseWindow();
