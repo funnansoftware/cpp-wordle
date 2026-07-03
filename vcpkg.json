@@ -1,0 +1,15 @@
+{
+    "name": "cpp-wordle",
+    "version-string": "2026.4.10",
+    "port-version": 1,
+    "description": "C++ implementation of the Wordle game.",
+    "homepage": "https://github.com/funnansoftware/cpp-wordle",
+    "dependencies": [
+        "magic-enum",
+        "raylib",
+        {
+            "name": "glfw3",
+            "platform": "!emscripten & !android"
+        }
+    ]
+}
