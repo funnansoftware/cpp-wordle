@@ -8,6 +8,7 @@
 
 #include "Dictionary.hpp"
 #include "EnumArray.hpp"
+#include "Messages.hpp"
 
 namespace wordle
 {
@@ -76,12 +77,18 @@ namespace wordle
         Game(std::size_t max_guesses, const Dictionary& dictionary);
 
         [[nodiscard]] auto guesses() const -> const std::vector<Guess>&;
+        [[nodiscard]] auto messages() const -> const Messages&;
 
         auto process_letter(Letter letter) -> void;
+        auto update_messages(std::chrono::duration<float> dt) -> void;
 
     private:
         auto submit_guess() -> void;
         auto delete_letter() -> void;
+
+        // The active row's filled letters as an uppercase string, for validating
+        // against the dictionary.
+        [[nodiscard]] auto current_word() const -> std::string;
 
         const Dictionary* dictionary{};
 
@@ -91,5 +98,6 @@ namespace wordle
 
         EnumArray<Letter, LetterState> keyboard_state;
         State state{State::Playing};
+        Messages messages_;
     };
 }
