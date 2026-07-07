@@ -15,6 +15,22 @@ target_sources(${PROJECT_NAME}
         Render.cpp
 )
 
+# Embed words.json into a generated header at configure time so the word list
+# ships inside the binary on every platform -- including web and Android, which
+# have no runtime file access. Editing words.json re-runs CMake.
+set(GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/words.json")
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/words.json" WORDS_JSON)
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/WordList.hpp.in"
+    "${GENERATED_DIR}/wordle/WordList.hpp"
+    @ONLY
+)
+target_include_directories(${PROJECT_NAME} PRIVATE "${GENERATED_DIR}")
+
+find_package(nlohmann_json CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
+
 if(EMSCRIPTEN)
     set(raylib_USE_STATIC_LIBS ON)
 

@@ -6,6 +6,7 @@
     "homepage": "https://github.com/funnansoftware/cpp-wordle",
     "dependencies": [
         "magic-enum",
+        "nlohmann-json",
         "raylib",
         {
             "name": "glfw3",
