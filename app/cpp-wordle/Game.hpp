@@ -8,6 +8,7 @@
 
 #include "Dictionary.hpp"
 #include "EnumArray.hpp"
+#include "Messages.hpp"
 
 namespace wordle
 {
@@ -73,23 +74,40 @@ namespace wordle
             Lost,
         };
 
-        Game(std::size_t max_guesses, const Dictionary& dictionary);
+        Game(std::size_t max_guesses, Dictionary& dictionary);
 
         [[nodiscard]] auto guesses() const -> const std::vector<Guess>&;
+        [[nodiscard]] auto messages() const -> const Messages&;
+        [[nodiscard]] auto keyboard_state(Letter letter) const -> LetterState;
+        [[nodiscard]] auto is_playing() const -> bool;
 
         auto process_letter(Letter letter) -> void;
+        auto update_messages(std::chrono::duration<float> dt) -> void;
+
+        // Clear the board and pick a fresh target for another round.
+        auto reset() -> void;
 
     private:
         auto submit_guess() -> void;
         auto delete_letter() -> void;
 
-        const Dictionary* dictionary{};
+        // Read the dictionary's current target into target_word as Letters.
+        auto load_target() -> void;
+
+        // The active row's filled letters as an uppercase string, for validating
+        // against the dictionary.
+        [[nodiscard]] auto current_word() const -> std::string;
+
+        Dictionary* dictionary{};
 
         std::vector<Guess> guesses_;
         decltype(std::begin(guesses_)) active_guess;
         std::vector<Letter> target_word;
 
-        EnumArray<Letter, LetterState> keyboard_state;
+        // Best state seen so far for each key, so the on-screen keyboard can tint
+        // A..Z. None/Enter/Delete are never written.
+        EnumArray<Letter, LetterState> keyboard_state_{};
         State state{State::Playing};
+        Messages messages_;
     };
 }

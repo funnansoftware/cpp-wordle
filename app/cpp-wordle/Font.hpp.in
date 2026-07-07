@@ -1,0 +1,17 @@
+#pragma once
+
+#include <cstddef>
+
+namespace wordle
+{
+    // Roboto Regular, embedded from assets/roboto.ttf as a byte array at configure
+    // time (see CMakeLists.txt), so smooth vector text ships inside the binary on
+    // every platform -- including web and Android. Editing the font re-runs CMake.
+    // Roboto (c) The Roboto Project Authors, Apache License 2.0; see
+    // assets/Roboto-LICENSE.txt.
+    inline constexpr unsigned char roboto_ttf[] = {
+        @FONT_BYTES@
+    };
+
+    inline constexpr std::size_t roboto_ttf_size = sizeof(roboto_ttf);
+}

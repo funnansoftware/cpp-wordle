@@ -1,0 +1,12 @@
+#pragma once
+
+#include <string_view>
+
+namespace wordle
+{
+    // The word list, embedded from words.json at configure time (see
+    // CMakeLists.txt). Editing words.json and reconfiguring regenerates this, so
+    // the list ships inside the binary on every platform -- including web and
+    // Android, where runtime file access is not available.
+    inline constexpr std::string_view words_json = R"WORDS(@WORDS_JSON@)WORDS";
+}
