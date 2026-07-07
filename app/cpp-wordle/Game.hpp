@@ -78,6 +78,8 @@ namespace wordle
 
         [[nodiscard]] auto guesses() const -> const std::vector<Guess>&;
         [[nodiscard]] auto messages() const -> const Messages&;
+        [[nodiscard]] auto keyboard_state(Letter letter) const -> LetterState;
+        [[nodiscard]] auto is_playing() const -> bool;
 
         auto process_letter(Letter letter) -> void;
         auto update_messages(std::chrono::duration<float> dt) -> void;
@@ -96,7 +98,9 @@ namespace wordle
         decltype(std::begin(guesses_)) active_guess;
         std::vector<Letter> target_word;
 
-        EnumArray<Letter, LetterState> keyboard_state;
+        // Best state seen so far for each key, so the on-screen keyboard can tint
+        // A..Z. None/Enter/Delete are never written.
+        EnumArray<Letter, LetterState> keyboard_state_;
         State state{State::Playing};
         Messages messages_;
     };

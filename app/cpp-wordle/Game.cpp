@@ -39,6 +39,16 @@ auto Game::update_messages(std::chrono::duration<float> dt) -> void
     messages_.update(dt);
 }
 
+auto Game::keyboard_state(Letter letter) const -> LetterState
+{
+    return keyboard_state_[letter];
+}
+
+auto Game::is_playing() const -> bool
+{
+    return state == State::Playing;
+}
+
 auto Game::process_letter(Letter letter) -> void
 {
     if (state != State::Playing or letter == Letter::None)
@@ -120,6 +130,16 @@ auto Game::submit_guess() -> void
         {
             guess.state = LetterState::Present;
             letter_counts[guess.letter]--;
+        }
+    }
+
+    // Promote each key to the best state it has ever shown (Correct beats Present
+    // beats Absent), so the on-screen keyboard mirrors the grid.
+    for (const auto& guess : active_guess->guesses)
+    {
+        if (guess.state > keyboard_state_[guess.letter])
+        {
+            keyboard_state_[guess.letter] = guess.state;
         }
     }
 
