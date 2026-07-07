@@ -24,6 +24,14 @@ namespace
     // Enter and Delete spell a word rather than a glyph, so they get a wider key.
     constexpr auto WideKeyScale = 1.5F;
 
+    // Font size for UI text (button label and message toasts).
+    constexpr auto UiFontSize = 24.0F;
+
+    // "New Game" button dimensions and outline thickness.
+    constexpr auto ButtonWidth = 150.0F;
+    constexpr auto ButtonHeight = 50.0F;
+    constexpr auto ButtonOutline = 4.0F;
+
     // The fixed QWERTY arrangement. Rows are ragged (10/9/9).
     constexpr std::array KeyboardTop{
         wordle::Letter::Q, wordle::Letter::W, wordle::Letter::E, wordle::Letter::R, wordle::Letter::T,
@@ -153,6 +161,35 @@ namespace
             y += layout.tile_size + layout.spacing;
         }
     }
+
+    // Draw the "New Game" button shown once the game is over.
+    auto render_new_game_button(const Layout& layout) -> void
+    {
+        const auto rect = wordle::new_game_button_rect(layout);
+        DrawRectangleLinesEx(rect, ButtonOutline, WHITE);
+        draw_text_centered("New Game", rect, UiFontSize, WHITE);
+    }
+
+    // Stack the active message toasts (white boxes, black text) near the top.
+    auto render_messages(const wordle::Game& game, const Layout& layout) -> void
+    {
+        constexpr auto MessagePadding = 10.0F;
+
+        auto y = layout.spacing * 2.0F;
+        for (const auto& message : game.messages().all())
+        {
+            const std::string owned{message.text};
+            const auto text_size = MeasureTextEx(GetFontDefault(), owned.c_str(), UiFontSize, TextSpacing);
+            const auto width = text_size.x + MessagePadding * 2.0F;
+            const auto height = text_size.y + MessagePadding * 2.0F;
+            const auto rect = Rectangle{(layout.screen_size.x - width) * 0.5F, y, width, height};
+
+            DrawRectangleRec(rect, WHITE);
+            draw_text_centered(message.text, rect, UiFontSize, BLACK);
+
+            y += height + layout.spacing * 2.0F;
+        }
+    }
 }
 
 auto wordle::board_width(const Layout& layout) -> float
@@ -187,6 +224,12 @@ auto wordle::row_start_x(const Layout& layout, KeyRow row) -> float
     return (layout.screen_size.x - row_width(layout, row)) * 0.5F;
 }
 
+auto wordle::new_game_button_rect(const Layout& layout) -> Rectangle
+{
+    const auto board_height = layout.spacing + static_cast<float>(layout.rows) * (layout.tile_size + layout.spacing);
+    return Rectangle{(layout.screen_size.x - ButtonWidth) * 0.5F, board_height, ButtonWidth, ButtonHeight};
+}
+
 auto wordle::render(const Game& game, const Layout& layout) -> void
 {
     render_board(game, layout);
@@ -195,6 +238,12 @@ auto wordle::render(const Game& game, const Layout& layout) -> void
     {
         render_keyboard(game, layout);
     }
+    else
+    {
+        render_new_game_button(layout);
+    }
+
+    render_messages(game, layout);
 }
 
 auto wordle::raylib_to_letter(int key) -> Letter

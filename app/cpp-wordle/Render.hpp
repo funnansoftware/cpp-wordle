@@ -41,6 +41,10 @@ namespace wordle
     // X of a keyboard row's first key, so the row is horizontally centred.
     [[nodiscard]] auto row_start_x(const Layout& layout, KeyRow row) -> float;
 
+    // The "New Game" button rectangle, just below the grid. Shared with the input
+    // controller so a click can be routed to it.
+    [[nodiscard]] auto new_game_button_rect(const Layout& layout) -> Rectangle;
+
     // Draw the whole game for one frame. Reads the Game; never mutates it.
     auto render(const Game& game, const Layout& layout) -> void;
 
