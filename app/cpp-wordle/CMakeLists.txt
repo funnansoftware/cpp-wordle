@@ -26,6 +26,18 @@ configure_file(
     "${GENERATED_DIR}/wordle/WordList.hpp"
     @ONLY
 )
+
+# Embed the TTF font the same way, as a byte array, so smooth vector text is
+# available on every platform without shipping a separate asset file.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/assets/roboto.ttf")
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/assets/roboto.ttf" FONT_HEX HEX)
+string(REGEX REPLACE "(..)" "0x\\1," FONT_BYTES "${FONT_HEX}")
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/Font.hpp.in"
+    "${GENERATED_DIR}/wordle/Font.hpp"
+    @ONLY
+)
+
 target_include_directories(${PROJECT_NAME} PRIVATE "${GENERATED_DIR}")
 
 find_package(nlohmann_json CONFIG REQUIRED)

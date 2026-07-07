@@ -25,6 +25,8 @@ try
     InitWindow(WindowWidth, WindowHeight, "Wordle");
     SetWindowPosition(WindowWidth, static_cast<int>(WindowHeight * 0.5));
 
+    wordle::load_font();
+
     auto previous = std::chrono::steady_clock::now();
 
     while (!WindowShouldClose())
@@ -55,6 +57,7 @@ try
         PollInputEvents();
     }
 
+    wordle::unload_font();
     CloseWindow();
 
     return EXIT_SUCCESS;

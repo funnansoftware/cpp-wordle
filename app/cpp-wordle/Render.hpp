@@ -45,6 +45,11 @@ namespace wordle
     // controller so a click can be routed to it.
     [[nodiscard]] auto new_game_button_rect(const Layout& layout) -> Rectangle;
 
+    // Load the embedded TTF used for all text. Call once after the window (and
+    // therefore the GL context) exists; unload_font() before the window closes.
+    auto load_font() -> void;
+    auto unload_font() -> void;
+
     // Draw the whole game for one frame. Reads the Game; never mutates it.
     auto render(const Game& game, const Layout& layout) -> void;
 }

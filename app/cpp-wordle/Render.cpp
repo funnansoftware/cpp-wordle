@@ -7,13 +7,29 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include <wordle/Font.hpp>
+
 using wordle::KeyRow;
 using wordle::Layout;
 
 namespace
 {
-    // raylib's default font letter spacing.
+    // Extra spacing between glyphs, in pixels.
     constexpr auto TextSpacing = 1.0F;
+
+    // Pixel size the font atlas is baked at. Larger than any on-screen size so
+    // text scales down (with bilinear filtering) and stays crisp.
+    constexpr auto FontBakeSize = 128;
+
+    // The embedded TTF, once loaded. Text falls back to raylib's built-in font
+    // until load_font() runs (it needs a GL context, so it cannot be static-init).
+    Font g_font{};
+    bool g_font_loaded = false;
+
+    auto current_font() -> Font
+    {
+        return g_font_loaded ? g_font : GetFontDefault();
+    }
 
     // Line thickness of an empty tile's outline.
     constexpr auto GridOutline = 2.0F;
@@ -65,12 +81,12 @@ namespace
     auto draw_text_centered(std::string_view text, Rectangle rect, float font_size, Color color) -> void
     {
         const std::string owned{text};
-        const auto size = MeasureTextEx(GetFontDefault(), owned.c_str(), font_size, TextSpacing);
+        const auto size = MeasureTextEx(current_font(), owned.c_str(), font_size, TextSpacing);
         const auto pos = Vector2{
             rect.x + (rect.width - size.x) * 0.5F,
             rect.y + (rect.height - size.y) * 0.5F,
         };
-        DrawTextEx(GetFontDefault(), owned.c_str(), pos, font_size, TextSpacing, color);
+        DrawTextEx(current_font(), owned.c_str(), pos, font_size, TextSpacing, color);
     }
 
     // Like draw_text_centered, but shrinks the font so the label fits the rect's
@@ -82,7 +98,7 @@ namespace
         const std::string owned{text};
         auto size = font_size;
         const auto max_width = rect.width - TextPadding * 2.0F;
-        const auto text_width = MeasureTextEx(GetFontDefault(), owned.c_str(), size, TextSpacing).x;
+        const auto text_width = MeasureTextEx(current_font(), owned.c_str(), size, TextSpacing).x;
         if (text_width > max_width && text_width > 0.0F)
         {
             size *= max_width / text_width;
@@ -179,7 +195,7 @@ namespace
         for (const auto& message : game.messages().all())
         {
             const std::string owned{message.text};
-            const auto text_size = MeasureTextEx(GetFontDefault(), owned.c_str(), UiFontSize, TextSpacing);
+            const auto text_size = MeasureTextEx(current_font(), owned.c_str(), UiFontSize, TextSpacing);
             const auto width = text_size.x + MessagePadding * 2.0F;
             const auto height = text_size.y + MessagePadding * 2.0F;
             const auto rect = Rectangle{(layout.screen_size.x - width) * 0.5F, y, width, height};
@@ -228,6 +244,24 @@ auto wordle::new_game_button_rect(const Layout& layout) -> Rectangle
 {
     const auto board_height = layout.spacing + static_cast<float>(layout.rows) * (layout.tile_size + layout.spacing);
     return Rectangle{(layout.screen_size.x - ButtonWidth) * 0.5F, board_height, ButtonWidth, ButtonHeight};
+}
+
+auto wordle::load_font() -> void
+{
+    g_font = LoadFontFromMemory(".ttf", roboto_ttf, static_cast<int>(roboto_ttf_size), FontBakeSize, nullptr, 0);
+
+    // Smooth the atlas when it is scaled to the on-screen sizes.
+    SetTextureFilter(g_font.texture, TEXTURE_FILTER_BILINEAR);
+    g_font_loaded = true;
+}
+
+auto wordle::unload_font() -> void
+{
+    if (g_font_loaded)
+    {
+        UnloadFont(g_font);
+        g_font_loaded = false;
+    }
 }
 
 auto wordle::render(const Game& game, const Layout& layout) -> void
