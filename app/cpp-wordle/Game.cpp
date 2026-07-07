@@ -16,18 +16,20 @@ Game::Game(std::size_t max_guesses, Dictionary& dictionary)
 
 auto Game::load_target() -> void
 {
-    target_word.clear();
+    const auto target = dictionary->target_word();
 
-    for (auto letter : dictionary->target_word())
+    // One Letter per column, with None for any non-A..Z character, so target_word
+    // always has word_length() entries. Scoring indexes it by guess column, so a
+    // shorter mapping would read past the end; this keeps positions aligned and in
+    // bounds (mirroring the reference's fixed-size letter mapping).
+    target_word.assign(dictionary->word_length(), Letter::None);
+
+    for (std::size_t i = 0; i < target.size() && i < target_word.size(); ++i)
     {
-        auto e = magic_enum::enum_cast<Letter>(std::string_view{&letter, 1});
-
-        if (!e.has_value())
+        if (const auto letter = magic_enum::enum_cast<Letter>(std::string_view{&target[i], 1}))
         {
-            continue;
+            target_word[i] = letter.value();
         }
-
-        target_word.push_back(e.value());
     }
 }
 
