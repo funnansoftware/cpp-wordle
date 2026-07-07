@@ -5,6 +5,7 @@
 
 #include "Dictionary.hpp"
 #include "Game.hpp"
+#include "Input.hpp"
 #include "Render.hpp"
 
 constexpr auto WindowWidth = 1280;
@@ -32,9 +33,6 @@ try
         const std::chrono::duration<float> dt = now - previous;
         previous = now;
 
-        game.process_letter(wordle::raylib_to_letter(GetKeyPressed()));
-        game.update_messages(dt);
-
         const auto layout = wordle::Layout{
             .tile_size = TileSize,
             .spacing = Spacing,
@@ -42,6 +40,9 @@ try
             .word_length = dictionary.word_length(),
             .rows = MaxGuesses,
         };
+
+        wordle::handle_input(game, layout);
+        game.update_messages(dt);
 
         BeginDrawing();
         ClearBackground(BLACK);

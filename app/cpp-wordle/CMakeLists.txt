@@ -11,6 +11,7 @@ target_sources(${PROJECT_NAME}
         main.cpp
         Dictionary.cpp
         Game.cpp
+        Input.cpp
         Render.cpp
 )
 

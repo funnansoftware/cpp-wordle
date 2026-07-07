@@ -47,8 +47,4 @@ namespace wordle
 
     // Draw the whole game for one frame. Reads the Game; never mutates it.
     auto render(const Game& game, const Layout& layout) -> void;
-
-    // Translate a raylib key code into a Letter (belongs with input, kept here
-    // until the input controller is split out).
-    [[nodiscard]] auto raylib_to_letter(int key) -> Letter;
 }
