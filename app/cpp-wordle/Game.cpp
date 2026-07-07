@@ -6,12 +6,19 @@
 
 using wordle::Game;
 
-Game::Game(std::size_t max_guesses, const Dictionary& dictionary)
+Game::Game(std::size_t max_guesses, Dictionary& dictionary)
     : dictionary{&dictionary},
-      guesses_{max_guesses, {.guesses = std::vector<LetterGuess>(dictionary.target_word().size(), {Letter::None, LetterState::Default})}},
+      guesses_{max_guesses, {.guesses = std::vector<LetterGuess>(dictionary.word_length(), {Letter::None, LetterState::Default})}},
       active_guess{std::begin(guesses_)}
 {
-    for (auto letter : dictionary.target_word())
+    load_target();
+}
+
+auto Game::load_target() -> void
+{
+    target_word.clear();
+
+    for (auto letter : dictionary->target_word())
     {
         auto e = magic_enum::enum_cast<Letter>(std::string_view{&letter, 1});
 
@@ -22,6 +29,24 @@ Game::Game(std::size_t max_guesses, const Dictionary& dictionary)
 
         target_word.push_back(e.value());
     }
+}
+
+auto Game::reset() -> void
+{
+    dictionary->reroll();
+    load_target();
+
+    for (auto& row : guesses_)
+    {
+        for (auto& cell : row.guesses)
+        {
+            cell = {Letter::None, LetterState::Default};
+        }
+    }
+
+    keyboard_state_ = {};
+    active_guess = std::begin(guesses_);
+    state = State::Playing;
 }
 
 auto Game::guesses() const -> const std::vector<Guess>&
