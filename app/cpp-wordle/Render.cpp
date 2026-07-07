@@ -1,10 +1,13 @@
 #include "Render.hpp"
 
+#include <array>
+#include <span>
 #include <string>
 #include <string_view>
 
 #include <magic_enum/magic_enum.hpp>
 
+using wordle::KeyRow;
 using wordle::Layout;
 
 namespace
@@ -14,6 +17,24 @@ namespace
 
     // Line thickness of an empty tile's outline.
     constexpr auto GridOutline = 2.0F;
+
+    // Letter keys are a little narrower than a grid tile.
+    constexpr auto KeyWidthRatio = 0.65F;
+
+    // Enter and Delete spell a word rather than a glyph, so they get a wider key.
+    constexpr auto WideKeyScale = 1.5F;
+
+    // The fixed QWERTY arrangement. Rows are ragged (10/9/9).
+    constexpr std::array KeyboardTop{
+        wordle::Letter::Q, wordle::Letter::W, wordle::Letter::E, wordle::Letter::R, wordle::Letter::T,
+        wordle::Letter::Y, wordle::Letter::U, wordle::Letter::I, wordle::Letter::O, wordle::Letter::P};
+    constexpr std::array KeyboardHome{
+        wordle::Letter::A, wordle::Letter::S, wordle::Letter::D, wordle::Letter::F, wordle::Letter::G,
+        wordle::Letter::H, wordle::Letter::J, wordle::Letter::K, wordle::Letter::L};
+    constexpr std::array KeyboardBottom{
+        wordle::Letter::Enter, wordle::Letter::Z, wordle::Letter::X, wordle::Letter::C, wordle::Letter::V,
+        wordle::Letter::B, wordle::Letter::N, wordle::Letter::M, wordle::Letter::Delete};
+    constexpr std::array<KeyRow, 3> KeyboardRows{KeyboardTop, KeyboardHome, KeyboardBottom};
 
     // The Wordle palette, keyed by letter state.
     constexpr auto letter_color(wordle::LetterState state) -> Color
@@ -42,6 +63,62 @@ namespace
             rect.y + (rect.height - size.y) * 0.5F,
         };
         DrawTextEx(GetFontDefault(), owned.c_str(), pos, font_size, TextSpacing, color);
+    }
+
+    // Like draw_text_centered, but shrinks the font so the label fits the rect's
+    // width. Single glyphs render as-is; "Enter"/"Delete" scale down.
+    auto draw_text_fit(std::string_view text, Rectangle rect, float font_size, Color color) -> void
+    {
+        constexpr auto TextPadding = 8.0F;
+
+        const std::string owned{text};
+        auto size = font_size;
+        const auto max_width = rect.width - TextPadding * 2.0F;
+        const auto text_width = MeasureTextEx(GetFontDefault(), owned.c_str(), size, TextSpacing).x;
+        if (text_width > max_width && text_width > 0.0F)
+        {
+            size *= max_width / text_width;
+        }
+
+        draw_text_centered(text, rect, size, color);
+    }
+
+    // Base letter-key width; every key derives from this.
+    auto base_key_width(const Layout& layout) -> float
+    {
+        return layout.tile_size * KeyWidthRatio;
+    }
+
+    // Total laid-out width of a row: every key plus the gaps between them.
+    auto row_width(const Layout& layout, KeyRow row) -> float
+    {
+        auto width = layout.spacing * static_cast<float>(row.size() - 1);
+        for (const auto key : row)
+        {
+            width += wordle::key_width_for(layout, key);
+        }
+        return width;
+    }
+
+    // Draw the on-screen keyboard, tinting each key by its best seen state.
+    auto render_keyboard(const wordle::Game& game, const Layout& layout) -> void
+    {
+        auto y = wordle::keyboard_top_y(layout);
+        for (const auto row : wordle::keyboard_layout())
+        {
+            auto x = wordle::row_start_x(layout, row);
+            for (const auto key : row)
+            {
+                const auto width = wordle::key_width_for(layout, key);
+                const auto rect = Rectangle{x, y, width, layout.tile_size};
+
+                DrawRectangleRec(rect, letter_color(game.keyboard_state(key)));
+                draw_text_fit(magic_enum::enum_name(key), rect, layout.tile_size * 0.5F, WHITE);
+
+                x += width + layout.spacing;
+            }
+            y += layout.tile_size + layout.spacing;
+        }
     }
 
     // Draw the six-row guess grid, tinting each tile by its letter state.
@@ -84,9 +161,40 @@ auto wordle::board_width(const Layout& layout) -> float
            layout.spacing * static_cast<float>(layout.word_length - 1);
 }
 
+auto wordle::keyboard_layout() -> std::span<const KeyRow>
+{
+    return KeyboardRows;
+}
+
+auto wordle::key_width_for(const Layout& layout, Letter key) -> float
+{
+    auto width = base_key_width(layout);
+    if (key == Letter::Enter || key == Letter::Delete)
+    {
+        width *= WideKeyScale;
+    }
+    return width;
+}
+
+auto wordle::keyboard_top_y(const Layout& layout) -> float
+{
+    // Three rows tall, anchored to the bottom of the screen.
+    return layout.screen_size.y - (layout.tile_size + layout.spacing) * 3.0F;
+}
+
+auto wordle::row_start_x(const Layout& layout, KeyRow row) -> float
+{
+    return (layout.screen_size.x - row_width(layout, row)) * 0.5F;
+}
+
 auto wordle::render(const Game& game, const Layout& layout) -> void
 {
     render_board(game, layout);
+
+    if (game.is_playing())
+    {
+        render_keyboard(game, layout);
+    }
 }
 
 auto wordle::raylib_to_letter(int key) -> Letter
